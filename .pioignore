@@ -1,0 +1,13 @@
+# File e cartelle di configurazione degli editor
+.vscode/
+.idea/
+
+# File di sistema operativo
+.DS_Store
+
+# Ignora completamente la cartella dell'interfaccia web React
+# e tutto il suo contenuto, inclusi node_modules, build, etc.
+captive-portal-ui/
+
+# Se avessi una cartella node_modules nella root, ignoreresti anche quella
+node_modules/
