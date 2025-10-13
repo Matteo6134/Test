@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GymBuddy Configurator</title>
+    <style>
+        :root {
+            --primary-color: #0A84FF;
+            --background-color: #000000;
+            --card-background: #1C1C1E;
+            --text-color: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(235, 235, 245, 0.6);
+            --success-color: #34C759;
+            --error-color: #FF3B30;
+            --glass-background: rgba(44, 44, 46, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --input-background: rgba(120, 120, 128, 0.24);
+        }
+        html { box-sizing: border-box; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body { margin: 0; padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom) 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--background-color); color: var(--text-color); overflow-x: hidden; }
+        .background { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; background: linear-gradient(45deg, #1d1d1d, #0a0a0a); }
+        .container { max-width: 600px; margin: 20px auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .card { background: var(--glass-background); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        h1 { font-size: 1.8rem; }
+        h1, h2 { color: var(--text-color); margin: 0 0 10px 0; }
+        p { color: var(--text-secondary); margin: 0 0 20px 0; }
+        button { background-color: var(--primary-color); color: white; padding: 12px 20px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        button:active { transform: scale(0.96); }
+        button.secondary { background-color: rgba(120, 120, 128, 0.36); }
+        button.danger { background-color: var(--error-color); }
+        button.small-danger { background-color: var(--error-color); font-size: 1.2rem; padding: 5px 10px; border-radius: 8px; }
+        .day-card h2 { font-size: 1.2rem; text-align: left; }
+        .exercise-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--glass-border); }
+        .exercise-item:last-child { border-bottom: none; }
+        .exercise-info { text-align: left; flex-grow: 1; cursor: pointer; padding: 5px 0; }
+        .exercise-name { font-weight: 600; }
+        .exercise-details { color: var(--text-secondary); font-size: 0.9rem; }
+        .modal { position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+        .modal.visible { opacity: 1; pointer-events: auto; }
+        .modal-content { background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); padding: 25px; border: 1px solid var(--glass-border); width: 90%; max-width: 400px; border-radius: 20px; transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal.visible .modal-content { transform: scale(1); }
+        .modal-content h2 { margin-top: 0; text-align: center; }
+        input[type="text"], select { width: 100%; padding: 12px; margin-bottom: 15px; background-color: var(--input-background); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-color); font-size: 1rem; -webkit-appearance: none; appearance: none; }
+        select { background-image: url('data:image/svg+xml;utf8,<svg fill="rgba(235, 235, 245, 0.6)" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position-x: calc(100% - 15px); background-position-y: 50%; }
+        label { display: block; text-align: left; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
+        .button-group button { flex: 1; }
+        .final-save-button { padding: 15px; font-size: 1.2rem; width: 100%; margin-top: 20px; }
+        .muscle-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .muscle-chip { background-color: var(--input-background); color: var(--text-secondary); padding: 8px 12px; border-radius: 20px; border: 1px solid var(--glass-border); font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .muscle-chip.selected { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="container">
+        <div class="header">
+            <h1>Configuratore Scheda</h1>
+            <button id="reset-btn" class="danger" data-action="reset-all">Pulisci</button>
+        </div>
+        <p>Aggiungi o modifica giorni ed esercizi, poi salva la scheda su GymBuddy.</p>
+        <div id="days-list"></div>
+        <button id="add-day-btn" class="secondary" style="width: 100%;" data-action="add-day">+ Aggiungi Giorno</button>
+        <button id="save-to-device-btn" class="final-save-button">Salva su GymBuddy</button>
+    </div>
+
+    <!-- Modale Giorno -->
+    <div id="day-modal" class="modal">
+        <div class="modal-content">
+            <h2>Nuovo Giorno</h2>
+            <label for="day-select">Giorno della settimana</label>
+            <select id="day-select">
+                <option value="Lunedì">Lunedì</option><option value="Martedì">Martedì</option><option value="Mercoledì">Mercoledì</option><option value="Giovedì">Giovedì</option><option value="Venerdì">Venerdì</option><option value="Sabato">Sabato</option><option value="Domenica">Domenica</option>
+            </select>
+            <label>Gruppi Muscolari</label>
+            <div id="muscle-chips-container" class="muscle-chips"></div>
+            <div class="button-group">
+                <button id="cancel-day-btn" class="secondary">Annulla</button>
+                <button id="save-day-btn">Salva Giorno</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Esercizio -->
+    <div id="exercise-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="exercise-modal-title">Nuovo Esercizio</h2>
+            <label for="exercise-name">Nome Esercizio</label>
+            <input type="text" id="exercise-name" placeholder="Es. Panca Piana">
+            <label for="exercise-sets">Serie</label>
+            <select id="exercise-sets"></select>
+            <label for="exercise-reps">Ripetizioni</label>
+            <select id="exercise-reps"></select>
+            <div class="button-group">
+                <button id="cancel-exercise-btn" class="secondary">Annulla</button>
+                <button id="save-exercise-btn">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let workout = [];
+            let editingDayIndex = -1;
+            let editingExerciseIndex = -1;
+
+            const daysList = document.getElementById('days-list');
+            const saveToDeviceBtn = document.getElementById('save-to-device-btn');
+            
+            const dayModal = document.getElementById('day-modal');
+            const muscleChipsContainer = document.getElementById('muscle-chips-container');
+            
+            const exerciseModal = document.getElementById('exercise-modal');
+            const exerciseModalTitle = document.getElementById('exercise-modal-title');
+            const exerciseNameInput = document.getElementById('exercise-name');
+            const exerciseSetsSelect = document.getElementById('exercise-sets');
+            const exerciseRpsSelect = document.getElementById('exercise-reps');
+            const saveExerciseBtn = document.getElementById('save-exercise-btn');
+
+            const muscleGroups = ["Petto", "Dorso", "Gambe", "Spalle", "Bicipiti", "Tricipiti", "Addome"];
+            
+            muscleGroups.forEach(muscle => {
+                const chip = document.createElement('button');
+                chip.className = 'muscle-chip';
+                chip.textContent = muscle;
+                muscleChipsContainer.appendChild(chip);
+            });
+            
+            for (let i = 1; i <= 10; i++) { exerciseSetsSelect.options.add(new Option(i, i)); }
+            for (let i = 1; i <= 50; i++) { exerciseRpsSelect.options.add(new Option(i, i)); }
+
+            function openModal(modal) { modal.style.display = 'flex'; setTimeout(() => modal.classList.add('visible'), 10); }
+            function closeModal(modal) { modal.classList.remove('visible'); setTimeout(() => modal.style.display = 'none', 300); }
+
+            function render() {
+                daysList.innerHTML = '';
+                workout.forEach((day, dayIndex) => {
+                    const dayCard = document.createElement('div');
+                    dayCard.className = 'card day-card';
+                    let exercisesHTML = '';
+                    day.exercises.forEach((ex, exIndex) => {
+                        exercisesHTML += `<div class="exercise-item"><div class="exercise-info" data-action="edit-exercise" data-day-index="${dayIndex}" data-ex-index="${exIndex}"><div class="exercise-name">${ex.name}</div><div class="exercise-details">${ex.sets} serie × ${ex.reps} reps</div></div><button class="small-danger" data-action="delete-exercise" data-day-index="${dayIndex}" data-ex-index="${exIndex}">✕</button></div>`;
+                    });
+                    dayCard.innerHTML = `<h2>${day.name} <small style="color: var(--text-secondary); font-weight: normal;">(${day.muscles})</small></h2><div class="exercises-container">${exercisesHTML}</div><div class="button-group"><button class="secondary" data-action="add-exercise" data-day-index="${dayIndex}">+ Aggiungi Esercizio</button><button class="danger" data-action="delete-day" data-day-index="${dayIndex}">Elimina Giorno</button></div>`;
+                    daysList.appendChild(dayCard);
+                });
+            }
+
+            async function loadInitialWorkout() {
+                try {
+                    const response = await fetch('/getWorkout');
+                    if (response.ok) {
+                        const data = await response.text();
+                        if (data && data.trim() !== "") {
+                            workout = data.split(';').map(dayString => {
+                                const [name, muscles, exercisesString] = dayString.split('|');
+                                const exercises = (exercisesString || '').split(',').filter(Boolean).map(exString => {
+                                    const [exName, sets, reps] = exString.split(':');
+                                    return { name: exName, sets: parseInt(sets, 10), reps: parseInt(reps, 10) };
+                                });
+                                return { name, muscles, exercises };
+                            });
+                        }
+                    }
+                } catch (error) { console.error("Impossibile caricare la scheda:", error); } 
+                finally { render(); }
+            }
+            
+            document.body.addEventListener('click', async function(e) {
+                const target = e.target;
+                const actionTarget = target.closest('[data-action]') || target;
+                const action = actionTarget.dataset.action;
+
+                if (!action) {
+                    if (target.parentElement.classList.contains('muscle-chips')) {
+                        target.classList.toggle('selected');
+                    }
+                    return;
+                }
+
+                const dayIndex = parseInt(actionTarget.dataset.dayIndex, 10);
+                const exIndex = parseInt(actionTarget.dataset.exIndex, 10);
+
+                switch (action) {
+                    case 'add-day':
+                        muscleChipsContainer.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
+                        openModal(dayModal);
+                        break;
+                    case 'reset-all':
+                        if (confirm('Sei sicuro di voler cancellare tutta la scheda?')) {
+                            workout = [];
+                            render();
+                        }
+                        break;
+                    case 'delete-day':
+                        workout.splice(dayIndex, 1);
+                        render();
+                        break;
+                    case 'add-exercise':
+                        editingDayIndex = dayIndex;
+                        editingExerciseIndex = -1;
+                        exerciseModalTitle.textContent = 'Nuovo Esercizio';
+                        saveExerciseBtn.textContent = 'Aggiungi';
+                        exerciseNameInput.value = '';
+                        exerciseSetsSelect.value = '3';
+                        exerciseRpsSelect.value = '10';
+                        openModal(exerciseModal);
+                        break;
+                    case 'edit-exercise':
+                        editingDayIndex = dayIndex;
+                        editingExerciseIndex = exIndex;
+                        const exercise = workout[dayIndex].exercises[exIndex];
+                        exerciseModalTitle.textContent = 'Modifica Esercizio';
+                        saveExerciseBtn.textContent = 'Salva Modifiche';
+                        exerciseNameInput.value = exercise.name;
+                        exerciseSetsSelect.value = exercise.sets;
+                        exerciseRpsSelect.value = exercise.reps;
+                        openModal(exerciseModal);
+                        break;
+                    case 'delete-exercise':
+                        workout[dayIndex].exercises.splice(exIndex, 1);
+                        render();
+                        break;
+                }
+            });
+            
+            document.getElementById('cancel-day-btn').addEventListener('click', () => closeModal(dayModal));
+            document.getElementById('save-day-btn').addEventListener('click', () => {
+                const name = document.getElementById('day-select').value;
+                const selectedMuscles = Array.from(muscleChipsContainer.querySelectorAll('.muscle-chip.selected')).map(chip => chip.textContent);
+                if (selectedMuscles.length > 0) {
+                    workout.push({ name, muscles: selectedMuscles.join(' - '), exercises: [] });
+                    closeModal(dayModal);
+                    render();
+                } else {
+                    alert('Seleziona almeno un gruppo muscolare.');
+                }
+            });
+
+            saveExerciseBtn.addEventListener('click', () => {
+                const name = exerciseNameInput.value.trim();
+                const sets = parseInt(exerciseSetsSelect.value, 10);
+                const reps = parseInt(exerciseRpsSelect.value, 10);
+                if (name) {
+                    const newExercise = { name, sets, reps };
+                    if (editingExerciseIndex === -1) {
+                        workout[editingDayIndex].exercises.push(newExercise);
+                    } else {
+                        workout[editingDayIndex].exercises[editingExerciseIndex] = newExercise;
+                    }
+                    closeModal(exerciseModal);
+                    render();
+                }
+            });
+            document.getElementById('cancel-exercise-btn').addEventListener('click', () => closeModal(exerciseModal));
+
+            saveToDeviceBtn.addEventListener('click', async () => {
+                const workoutString = workout.map(day => {
+                    const exString = day.exercises.map(ex => `${ex.name}:${ex.sets}:${ex.reps}`).join(',');
+                    return `${day.name}|${day.muscles}|${exString}`;
+                }).join(';');
+                
+                const originalText = saveToDeviceBtn.innerHTML;
+                saveToDeviceBtn.disabled = true;
+                saveToDeviceBtn.innerHTML = 'Salvataggio...';
+
+                try {
+                    const response = await fetch('/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'workoutData=' + encodeURIComponent(workoutString)
+                    });
+                    if (!response.ok) throw new Error(await response.text());
+                    saveToDeviceBtn.innerHTML = 'Salvato!';
+                    saveToDeviceBtn.style.backgroundColor = 'var(--success-color)';
+                } catch (error) {
+                    saveToDeviceBtn.innerHTML = 'Errore!';
+                    saveToDeviceBtn.style.backgroundColor = 'var(--error-color)';
+                    alert('Errore: ' + error.message);
+                } finally {
+                    setTimeout(() => {
+                        saveToDeviceBtn.disabled = false;
+                        saveToDeviceBtn.innerHTML = originalText;
+                        saveToDeviceBtn.style.backgroundColor = 'var(--primary-color)';
+                    }, 2000);
+                }
+            });
+            
+            loadInitialWorkout();
+        });
+    </script>
+</body>
+</html>
